@@ -1,8 +1,16 @@
 // Vercel Serverless Function for Vision API
-import axios from 'axios';
 
 // Add startup console log to confirm function is loaded
 console.log('Vision API serverless function initialized');
+
+// Import axios using require for better compatibility with serverless environments
+let axios;
+try {
+  axios = require('axios');
+  console.log('✅ Successfully imported axios');
+} catch (error) {
+  console.error('❌ Failed to import axios:', error.message);
+}
 
 export default async function handler(req, res) {
   // Only allow POST requests
@@ -46,6 +54,9 @@ export default async function handler(req, res) {
     const apiEndpoint = 'https://api.openai.com/v1/chat/completions';
     console.log(`Using endpoint: ${apiEndpoint}`);
     
+    // Log API key presence (but not the actual key)
+    console.log('🔑 OpenAI API Key present:', !!process.env.OPENAI_API_KEY);
+    
     // For debugging - log the entire request payload
     const requestPayload = {
       model: "gpt-4o", // Using the latest GPT-4o model which has vision capabilities
@@ -61,7 +72,13 @@ export default async function handler(req, res) {
       max_tokens: 300
     };
     
-    console.log('Request payload structure:', JSON.stringify(requestPayload).substring(0, 500) + '...');
+    // Only log a small portion of the payload to avoid overwhelming logs
+    console.log('Request payload structure (truncated):', 
+      JSON.stringify({
+        model: requestPayload.model,
+        messages: [{ role: 'user', content: '[Image content truncated for logging]' }],
+        max_tokens: requestPayload.max_tokens
+      }));
     
     const response = await axios.post(
       apiEndpoint,
@@ -98,10 +115,35 @@ export default async function handler(req, res) {
     if (error.response) {
       console.error(`Status: ${error.response.status}`);
       console.error('Error details:', error.response.data);
+      
+      // Return the actual error from OpenAI for better debugging
+      return res.status(500).json({ 
+        error: `OpenAI API error (${error.response.status}): ${JSON.stringify(error.response.data)}`,
+        details: error.response.data
+      });
     }
     
+    // Check if it's an API key issue
+    if (error.message.includes('API key')) {
+      console.error('🔑 API Key error detected');
+      return res.status(500).json({ 
+        error: 'Missing or invalid OpenAI API key. Please check your environment variables.',
+        hint: 'Make sure OPENAI_API_KEY is properly set in your Vercel project settings.'
+      });
+    }
+    
+    // Check for network/timeout issues
+    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      return res.status(500).json({ 
+        error: 'Request to OpenAI timed out. The image might be too large or the service might be experiencing high load.',
+        hint: 'Try with a smaller image or retry later.'
+      });
+    }
+    
+    // Generic error fallback
     return res.status(500).json({ 
-      error: `Failed to analyze image: ${error.message}` 
+      error: `Failed to analyze image: ${error.message}`,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
