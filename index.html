@@ -28,9 +28,13 @@
       background-color: #000;
       overflow: hidden;
       flex-shrink: 0;
+      /* Fix for aspect ratio during camera initialization */
+      aspect-ratio: 9/16; /* Mobile-first vertical ratio */
     }
     video {
       width: 100%;
+      height: 100%;
+      object-fit: cover; /* Ensures video fills the container */
       display: block;
       background-color: #000;
     }
