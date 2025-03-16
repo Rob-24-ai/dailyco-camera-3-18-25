@@ -24,15 +24,17 @@
     }
     .camera-container {
       position: relative;
-      width: 100%;
+      width: 95%; /* Reduced from 100% to create space on sides */
+      margin: 0 auto; /* Center horizontally */
+      margin-top: 8px;
+      margin-bottom: 8px;
       background-color: #000;
       overflow: hidden;
       flex-shrink: 0;
       /* Fix for aspect ratio during camera initialization */
       aspect-ratio: 9/16; /* Mobile-first vertical ratio */
-      /* Just rounded corners and margin */
+      /* Just rounded corners */
       border-radius: 12px;
-      margin: 8px;
     }
     video {
       width: 100%;
