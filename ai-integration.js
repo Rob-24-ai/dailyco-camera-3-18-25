@@ -140,8 +140,28 @@ export function initAI(videoElement) {
       
       console.log('✅ Analysis complete:', result);
       
-      // Display results
-      aiResponse.textContent = result.text || 'No analysis text returned from the server.';
+      // Display results - supporting both new multimodal format and legacy format
+      let analysisText = '';
+      
+      // First check if we have the new modalities structure
+      if (result.modalities && result.primary && result.modalities[result.primary]) {
+        // Get content from the primary modality (currently 'text')
+        const primaryModality = result.modalities[result.primary];
+        analysisText = primaryModality.content || '';
+        
+        console.log(`📝 Using ${result.primary} modality from v${result.version} response`);
+      } 
+      // Fallback to legacy format
+      else if (result.text) {
+        analysisText = result.text;
+        console.log('📝 Using legacy text response format');
+      }
+      
+      // Update UI with the analysis results
+      aiResponse.textContent = analysisText || 'No analysis text returned from the server.';
+      
+      // Save complete result in case we need to access other modalities later
+      aiResponse.dataset.fullResponse = JSON.stringify(result);
     } catch (error) {
       // Handle errors
       console.error('❌ Analysis error:', error);

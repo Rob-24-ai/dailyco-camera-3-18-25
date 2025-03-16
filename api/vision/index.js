@@ -98,9 +98,37 @@ export default async function handler(req, res) {
     
     console.log('✅ Received response from OpenAI');
     
-    // Return the analysis result to the client
-    return res.status(200).json({ 
-      result: response.data.choices[0].message.content
+    // Get the response content
+    const analysisText = response.data.choices[0].message.content;
+    
+    // Return a structured response format that can accommodate multiple modalities
+    return res.status(200).json({
+      // Version for tracking response format changes
+      version: "1.0",
+      
+      // Response data organized by modality for future extensibility
+      modalities: {
+        // Text modality (currently used)
+        text: {
+          content: analysisText,
+          format: "plain_text"
+        },
+        
+        // Voice modality (placeholder for future implementation)
+        // voice: {
+        //   url: null,  // Would contain URL to audio file
+        //   format: "mp3", 
+        //   duration: null
+        // }
+      },
+      
+      // Main response content - currently points to text modality
+      // Frontend can use this as the default content to display
+      primary: "text",
+      
+      // Legacy support
+      text: analysisText,
+      result: analysisText
     });
     
   } catch (error) {
