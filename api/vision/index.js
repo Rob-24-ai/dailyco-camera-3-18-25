@@ -1,6 +1,9 @@
 // Vercel Serverless Function for Vision API
 import axios from 'axios';
 
+// Add startup console log to confirm function is loaded
+console.log('Vision API serverless function initialized');
+
 export default async function handler(req, res) {
   // Only allow POST requests
   if (req.method !== 'POST') {
