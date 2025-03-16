@@ -1,3 +1,6 @@
+// Import AI integration module
+import { initAI } from './ai-integration.js';
+
 // Configuration object for easy future modifications
 const CONFIG = {
   startWithRearCamera: true,
@@ -111,6 +114,9 @@ async function startCamera(useRear = true) {
       useRear ? 'Rear camera active' : 'Front camera active', 
       'success'
     );
+    
+    // Initialize AI integration when camera is ready
+    initAI(videoElement);
     
     // Switch camera button is always visible in the new UI
   } catch (error) {
