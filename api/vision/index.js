@@ -3,14 +3,9 @@
 // Add startup console log to confirm function is loaded
 console.log('Vision API serverless function initialized');
 
-// Import axios using require for better compatibility with serverless environments
-let axios;
-try {
-  axios = require('axios');
-  console.log('✅ Successfully imported axios');
-} catch (error) {
-  console.error('❌ Failed to import axios:', error.message);
-}
+// Import axios using ES module syntax since we've set type:module in package.json
+import axios from 'axios';
+console.log('✅ Using axios with ES modules');
 
 export default async function handler(req, res) {
   // Only allow POST requests
