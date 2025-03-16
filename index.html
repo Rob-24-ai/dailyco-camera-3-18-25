@@ -28,7 +28,7 @@
       margin: 0 auto; /* Center horizontally */
       margin-top: 8px;
       margin-bottom: 8px;
-      background-color: #000;
+      background-color: transparent;
       overflow: hidden;
       flex-shrink: 0;
       /* Fix for aspect ratio during camera initialization */
@@ -41,8 +41,8 @@
       height: 100%;
       object-fit: cover; /* Ensures video fills the container */
       display: block;
-      background-color: #000;
-      border-radius: 11px; /* Slightly less than container to preserve border visibility */
+      background-color: transparent;
+      border-radius: 12px; /* Exactly matching the container */
     }
     video.mirrored {
       transform: scaleX(-1);
