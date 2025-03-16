@@ -67,6 +67,13 @@ async function startCamera(useRear = true) {
     // Set the stream to video element
     videoElement.srcObject = currentStream;
     
+    // Apply mirroring for front camera only, leave rear camera as-is
+    if (!useRear) {
+      videoElement.classList.add('mirrored');
+    } else {
+      videoElement.classList.remove('mirrored');
+    }
+    
     // Show success message
     updateStatus(
       useRear ? 'Rear camera active' : 'Front camera active', 
