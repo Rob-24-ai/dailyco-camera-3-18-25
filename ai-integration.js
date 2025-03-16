@@ -68,6 +68,30 @@ async function captureFrame(videoElement) {
 }
 
 /**
+ * Resets the view from captured image back to live video feed
+ * @param {HTMLImageElement} capturedImage - The main captured image element
+ * @param {HTMLVideoElement} mainVideo - The main video element
+ * @param {HTMLVideoElement} thumbnailVideo - The thumbnail video element
+ * @param {HTMLElement} thumbnailContainer - The thumbnail container element
+ */
+function resetToVideoView(capturedImage, mainVideo, thumbnailVideo, thumbnailContainer) {
+  // Hide the captured image
+  capturedImage.style.display = 'none';
+  
+  // Show the main video
+  mainVideo.style.display = 'block';
+  
+  // Hide the thumbnail elements
+  thumbnailVideo.style.display = 'none';
+  thumbnailContainer.style.display = 'none';
+  
+  // Clear the srcObject if needed to prevent duplicate streams
+  thumbnailVideo.srcObject = null;
+  
+  console.log('✅ Reset to video view - returned to camera feed');
+}
+
+/**
  * Sends image data to vision API for analysis
  * @param {Blob} imageBlob - Image blob from canvas
  * @returns {Promise<Object>} - AI analysis response
@@ -115,6 +139,60 @@ export function initAI(videoElement) {
   // Get UI elements
   const analyzeBtn = document.getElementById('analyze-btn');
   const aiResponse = document.getElementById('ai-response');
+  const captureBtn = document.getElementById('captureButton');
+  
+  // Add click handler for the capture button (thumbnail switcheroo testing)
+  if (captureBtn) {
+    captureBtn.addEventListener('click', async () => {
+      try {
+        // Capture current frame from video
+        const imageBlob = await captureFrame(videoElement);
+        
+        if (!imageBlob) {
+          console.error('❌ Failed to capture image from camera');
+          return;
+        }
+        
+        console.log('✅ Frame captured for thumbnail switcheroo test');
+        
+        // Use the same display logic as in analyze function
+        // THUMBNAIL SWITCHEROO: Display captured image in main view and move video to thumbnail
+        const capturedImage = document.getElementById('capturedImage');
+        const thumbnailContainer = document.getElementById('thumbnailContainer');
+        const thumbnailVideo = document.getElementById('thumbnailVideo');
+        const mainVideo = videoElement; // The main video element passed to the function
+        
+        if (capturedImage && thumbnailContainer && thumbnailVideo) {
+          // Create an object URL from the blob for the main image
+          capturedImage.src = URL.createObjectURL(imageBlob);
+          
+          // Set up cleanup and display logic
+          capturedImage.onload = () => {
+            // Show the captured image in the main view
+            mainVideo.style.display = 'none';
+            capturedImage.style.display = 'block';
+            
+            // Move video feed to thumbnail if not already there
+            if (thumbnailVideo.srcObject !== mainVideo.srcObject) {
+              thumbnailVideo.srcObject = mainVideo.srcObject;
+              thumbnailVideo.style.display = 'block';
+              thumbnailContainer.style.display = 'block';
+            }
+            
+            // Clean up the object URL to prevent memory leaks
+            URL.revokeObjectURL(capturedImage.src);
+            
+            // Add click handler to return to camera view when clicking on the image
+            capturedImage.onclick = () => resetToVideoView(capturedImage, mainVideo, thumbnailVideo, thumbnailContainer);
+            
+            console.log('✅ Thumbnail switcheroo complete - still image in main view, video in thumbnail');
+          };
+        }
+      } catch (error) {
+        console.error('❌ Error in capture button handler:', error);
+      }
+    });
+  }
   
   // Add click handler for analysis button
   analyzeBtn.addEventListener('click', async () => {
@@ -137,24 +215,36 @@ export function initAI(videoElement) {
       
       console.log('✅ Frame captured successfully');
       
-      // Display the captured image in the floating thumbnail
+      // THUMBNAIL SWITCHEROO: Display captured image in main view and move video to thumbnail
+      const capturedImage = document.getElementById('capturedImage');
       const thumbnailContainer = document.getElementById('thumbnailContainer');
-      const thumbnailImage = document.getElementById('thumbnailImage');
+      const thumbnailVideo = document.getElementById('thumbnailVideo');
+      const mainVideo = videoElement; // The main video element passed to the function
       
-      if (thumbnailContainer && thumbnailImage) {
-        // Create an object URL from the blob for the thumbnail
-        thumbnailImage.src = URL.createObjectURL(imageBlob);
+      if (capturedImage && thumbnailContainer && thumbnailVideo) {
+        // Create an object URL from the blob for the main image
+        capturedImage.src = URL.createObjectURL(imageBlob);
         
-        // Clean up previous object URL when the image loads to prevent memory leaks
-        thumbnailImage.onload = () => {
-          // Show the thumbnail container
-          thumbnailContainer.style.display = 'block';
+        // Set up cleanup and display logic
+        capturedImage.onload = () => {
+          // Show the captured image in the main view
+          mainVideo.style.display = 'none';
+          capturedImage.style.display = 'block';
           
-          // Clean up the object URL
-          URL.revokeObjectURL(thumbnailImage.src);
+          // Move video feed to thumbnail if not already there
+          if (thumbnailVideo.srcObject !== mainVideo.srcObject) {
+            thumbnailVideo.srcObject = mainVideo.srcObject;
+            thumbnailVideo.style.display = 'block';
+            thumbnailContainer.style.display = 'block';
+          }
+          
+          // Clean up the object URL to prevent memory leaks
+          URL.revokeObjectURL(capturedImage.src);
+          
+          console.log('✅ Thumbnail switcheroo complete - still image in main view, video in thumbnail');
         };
       } else {
-        console.warn('Thumbnail elements not found in the DOM');
+        console.warn('Required elements for thumbnail switcheroo not found in DOM');
       }
       
       // Send to AI for analysis

@@ -141,14 +141,26 @@
 <body>
   <div class="app-container">
     <div class="camera-container">
+      <!-- Main display area - will show either video or captured image -->
       <video id="cameraPreview" autoplay playsinline></video>
+      <img id="capturedImage" style="display: none; width: 100%; height: 100%; object-fit: cover;" alt="Captured still image" />
       
-      <!-- Floating thumbnail in lower left -->
-      <div id="thumbnailContainer" class="thumbnail-container" style="display: none;">
-        <img id="thumbnailImage" class="thumbnail-image" alt="Captured image" />
+      <!-- Floating thumbnail in lower left - will show live video feed when image is captured -->
+      <div id="thumbnailContainer" class="thumbnail-container">
+        <video id="thumbnailVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; display: none;"></video>
+        <img id="thumbnailImage" class="thumbnail-image" alt="Captured image" style="display: none;" />
       </div>
       
       <div class="camera-controls">
+        <!-- Capture button for testing thumbnail switcheroo -->
+        <button id="captureButton" class="switch-camera-btn" style="background-color: rgba(220, 20, 60, 0.6); margin-right: 8px;" aria-label="Capture Frame">
+          <svg class="switch-camera-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="8" stroke-width="2" />
+            <circle cx="12" cy="12" r="3" fill="currentColor" />
+          </svg>
+        </button>
+
+        <!-- Original camera switch button -->
         <button id="switchCameraButton" class="switch-camera-btn" aria-label="Switch Camera">
           <svg class="switch-camera-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 4.5C3 4.5 6 2 12 2C18 2 21 4.5 21 4.5L18 8M21 19.5C21 19.5 18 22 12 22C6 22 3 19.5 3 19.5L6 16" stroke-linecap="round" stroke-linejoin="round"/>
