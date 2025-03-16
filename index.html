@@ -25,17 +25,14 @@
     .camera-container {
       position: relative;
       width: 100%;
-      max-width: 500px;
-      margin: 0 auto;
       background-color: #000;
       overflow: hidden;
       flex-shrink: 0;
       /* Fix for aspect ratio during camera initialization */
       aspect-ratio: 9/16; /* Mobile-first vertical ratio */
-      /* Add border and rounded corners */
-      border: 2px solid rgba(255, 255, 255, 0.2);
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      /* Just rounded corners and margin */
+      border-radius: 12px;
+      margin: 8px;
     }
     video {
       width: 100%;
@@ -43,6 +40,7 @@
       object-fit: cover; /* Ensures video fills the container */
       display: block;
       background-color: #000;
+      border-radius: 11px; /* Slightly less than container to preserve border visibility */
     }
     video.mirrored {
       transform: scaleX(-1);
