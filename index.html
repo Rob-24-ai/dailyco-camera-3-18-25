@@ -24,17 +24,19 @@
     }
     .camera-container {
       position: relative;
-      width: 95%; /* Reduced from 100% to create space on sides */
+      width: 90%; /* Slightly reduced width for better fit */
       margin: 0 auto; /* Center horizontally */
       margin-top: 8px;
       margin-bottom: 8px;
       background-color: transparent;
       overflow: hidden;
       flex-shrink: 0;
-      /* Fix for aspect ratio during camera initialization */
-      aspect-ratio: 3/4; /* Vertical orientation with traditional 3/4 ratio */
+      /* Square aspect ratio for orientation-neutral capture */
+      aspect-ratio: 1/1; /* Perfect square format */
       /* Just rounded corners */
       border-radius: 12px;
+      /* Max width to prevent excessive size on large screens */
+      max-width: 500px;
     }
     video {
       width: 100%;
@@ -93,6 +95,31 @@
       height: 24px;
     }
     
+    /* Floating thumbnail styles */
+    .thumbnail-container {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      z-index: 10;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      opacity: 0.9;
+      transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+    }
+    
+    .thumbnail-container:hover {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+    
+    .thumbnail-image {
+      width: 70px;
+      height: 70px;
+      object-fit: cover;
+      display: block;
+    }
+    
     /* Hidden retry button that appears on error */
     #retryButton {
       background-color: #4CAF50;
@@ -115,6 +142,11 @@
   <div class="app-container">
     <div class="camera-container">
       <video id="cameraPreview" autoplay playsinline></video>
+      
+      <!-- Floating thumbnail in lower left -->
+      <div id="thumbnailContainer" class="thumbnail-container" style="display: none;">
+        <img id="thumbnailImage" class="thumbnail-image" alt="Captured image" />
+      </div>
       
       <div class="camera-controls">
         <button id="switchCameraButton" class="switch-camera-btn" aria-label="Switch Camera">

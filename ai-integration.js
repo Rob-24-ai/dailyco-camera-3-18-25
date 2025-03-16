@@ -14,62 +14,79 @@ const AI_CONFIG = {
 };
 
 /**
- * Captures current frame from video element and returns as a data URL
+ * Captures current frame from video element and returns as a square Blob
  * @param {HTMLVideoElement} videoElement - Video element to capture from
- * @returns {string} - Data URL of captured image
+ * @returns {Promise<Blob>} - Square image blob for more efficient transfer
  */
-function captureFrame(videoElement) {
-  // Create a canvas element at the same size as the video
+async function captureFrame(videoElement) {
+  // Create a canvas element for square capture
   const canvas = document.createElement('canvas');
   const width = videoElement.videoWidth;
   const height = videoElement.videoHeight;
   
   // If video doesn't have dimensions yet, return null
-  if (!width || !height) return null;
+  if (!width || !height) return Promise.resolve(null);
   
-  // Calculate resize dimensions while maintaining aspect ratio
-  let targetWidth = width;
-  let targetHeight = height;
+  // Calculate the square dimensions (use smaller dimension)
+  const size = Math.min(width, height);
   
-  if (width > AI_CONFIG.vision.maxWidth) {
-    const ratio = AI_CONFIG.vision.maxWidth / width;
-    targetWidth = AI_CONFIG.vision.maxWidth;
-    targetHeight = height * ratio;
-  }
+  // Calculate center point of the video to crop from center
+  const centerX = width / 2;
+  const centerY = height / 2;
   
-  // Set canvas dimensions to target size
-  canvas.width = targetWidth;
-  canvas.height = targetHeight;
+  // Get the top-left corner coordinates of the square
+  const startX = centerX - (size / 2);
+  const startY = centerY - (size / 2);
   
-  // Draw the current video frame to the canvas, resizing in the process
+  // Determine if we need to resize the square
+  const targetSize = size > AI_CONFIG.vision.maxWidth ? 
+    AI_CONFIG.vision.maxWidth : size;
+  
+  // Set canvas to square format
+  canvas.width = targetSize;
+  canvas.height = targetSize;
+  
+  // Log details about the capture for debugging
+  console.log(`Square capture: ${targetSize}x${targetSize} from video ${width}x${height}`);
+  
+  // Draw the current video frame to the canvas, cropping to a square
   const ctx = canvas.getContext('2d');
-  ctx.drawImage(videoElement, 0, 0, targetWidth, targetHeight);
+  ctx.drawImage(
+    videoElement,
+    startX, startY, size, size, // Source rectangle (crop)
+    0, 0, targetSize, targetSize // Destination rectangle (with possible resizing)
+  );
   
-  // Convert canvas to data URL (JPEG with specified quality)
-  return canvas.toDataURL('image/jpeg', AI_CONFIG.vision.imageQuality);
+  // Convert canvas to Blob (more efficient than base64 data URL)
+  return new Promise((resolve) => {
+    canvas.toBlob(
+      (blob) => resolve(blob),
+      'image/jpeg', 
+      AI_CONFIG.vision.imageQuality
+    );
+  });
 }
 
 /**
  * Sends image data to vision API for analysis
- * @param {string} imageData - Base64 image data
+ * @param {Blob} imageBlob - Image blob from canvas
  * @returns {Promise<Object>} - AI analysis response
  */
-async function analyzeImage(imageData) {
+async function analyzeImage(imageBlob) {
   try {
-    console.log('🔍 Analyzing image - length:', imageData.length);
+    // Log blob size in KB for performance monitoring
+    console.log('🔍 Analyzing image - size:', Math.round(imageBlob.size / 1024), 'KB');
     console.log('🔗 Sending to endpoint:', AI_CONFIG.vision.endpoint);
     
-    // Check if imageData is a valid data URL or base64 string
-    if (!imageData.startsWith('data:image')) {
-      console.warn('⚠️ Image data does not start with data:image - might need format adjustment');
-    }
+    // Create FormData for more efficient multipart upload
+    const formData = new FormData();
+    formData.append('image', imageBlob, 'image.jpg');
     
+    // Send FormData to API endpoint
     const response = await fetch(AI_CONFIG.vision.endpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ imageData })
+      // No Content-Type header - browser sets it automatically with boundary for FormData
+      body: formData
     });
     
     console.log('📥 Response status:', response.status);
@@ -108,10 +125,10 @@ export function initAI(videoElement) {
       aiResponse.textContent = 'Analyzing image...';
       
       console.log('📷 Capturing frame from video...');
-      // Capture current frame from video
-      const imageData = captureFrame(videoElement);
+      // Capture current frame from video as Blob
+      const imageBlob = await captureFrame(videoElement);
       
-      if (!imageData) {
+      if (!imageBlob) {
         console.error('❌ Failed to capture image from camera');
         aiResponse.textContent = 'Error: Unable to capture image from camera.';
         analyzeBtn.disabled = false;
@@ -120,23 +137,29 @@ export function initAI(videoElement) {
       
       console.log('✅ Frame captured successfully');
       
-      // Create a debug indicator to show the captured image
-      const debugImg = document.createElement('img');
-      debugImg.src = imageData;
-      debugImg.style.width = '150px';
-      debugImg.style.display = 'block';
-      debugImg.style.marginTop = '10px';
+      // Display the captured image in the floating thumbnail
+      const thumbnailContainer = document.getElementById('thumbnailContainer');
+      const thumbnailImage = document.getElementById('thumbnailImage');
       
-      // Replace any previous debug image
-      const existingDebug = document.getElementById('debug-img');
-      if (existingDebug) existingDebug.remove();
-      
-      debugImg.id = 'debug-img';
-      aiResponse.after(debugImg);
+      if (thumbnailContainer && thumbnailImage) {
+        // Create an object URL from the blob for the thumbnail
+        thumbnailImage.src = URL.createObjectURL(imageBlob);
+        
+        // Clean up previous object URL when the image loads to prevent memory leaks
+        thumbnailImage.onload = () => {
+          // Show the thumbnail container
+          thumbnailContainer.style.display = 'block';
+          
+          // Clean up the object URL
+          URL.revokeObjectURL(thumbnailImage.src);
+        };
+      } else {
+        console.warn('Thumbnail elements not found in the DOM');
+      }
       
       // Send to AI for analysis
       console.log('📣 Sending to AI for analysis...');
-      const result = await analyzeImage(imageData);
+      const result = await analyzeImage(imageBlob);
       
       console.log('✅ Analysis complete:', result);
       

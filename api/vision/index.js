@@ -5,7 +5,31 @@ console.log('Vision API serverless function initialized');
 
 // Import axios using ES module syntax since we've set type:module in package.json
 import axios from 'axios';
+// Import multiparty for parsing FormData requests
+import multiparty from 'multiparty';
+// Import for file operations and conversion to base64
+import fs from 'fs';
+import { promisify } from 'util';
+
 console.log('✅ Using axios with ES modules');
+
+// Helper function to parse FormData
+const parseFormData = (req) => {
+  return new Promise((resolve, reject) => {
+    const form = new multiparty.Form();
+    form.parse(req, (err, fields, files) => {
+      if (err) return reject(err);
+      resolve({ fields, files });
+    });
+  });
+};
+
+// Helper function to convert file to base64
+const convertFileToBase64 = async (filePath) => {
+  const readFile = promisify(fs.readFile);
+  const buffer = await readFile(filePath);
+  return buffer.toString('base64');
+};
 
 export default async function handler(req, res) {
   // Only allow POST requests
@@ -17,29 +41,82 @@ export default async function handler(req, res) {
   console.log('📥 Received vision analysis request');
   
   try {
-    // Get image data from request body
-    const { imageData } = req.body;
+    // Support both FormData (multipart) and JSON request formats
+    let imageData = null;
+    const contentType = req.headers['content-type'] || '';
     
-    if (!imageData) {
-      console.error('❌ No image data received');
-      return res.status(400).json({ error: 'No image data provided' });
+    // Check if this is a multipart form (FormData with image blob)
+    if (contentType.includes('multipart/form-data')) {
+      console.log('📦 Received multipart FormData request');
+      
+      try {
+        // Parse the multipart form data
+        const { files } = await parseFormData(req);
+        
+        if (!files.image || !files.image[0]) {
+          console.error('❌ No image file found in FormData');
+          return res.status(400).json({ error: 'No image file provided in FormData' });
+        }
+        
+        // Get the image file details
+        const imageFile = files.image[0];
+        console.log(`📄 Received image file: ${imageFile.originalFilename}`);
+        console.log(`📊 File size: ${Math.round(imageFile.size / 1024)} KB`);
+        
+        // Convert file to base64
+        const base64Image = await convertFileToBase64(imageFile.path);
+        // Format for OpenAI API
+        imageData = `data:image/jpeg;base64,${base64Image}`;
+        
+        // Clean up the temp file
+        fs.unlinkSync(imageFile.path);
+      } catch (parseError) {
+        console.error('❌ Error parsing FormData:', parseError);
+        return res.status(400).json({ error: `Error processing image upload: ${parseError.message}` });
+      }
+    } 
+    // If it's a regular JSON request with the old format
+    else if (contentType.includes('application/json')) {
+      console.log('📜 Received JSON request');
+      const jsonData = req.body.imageData;
+      
+      if (!jsonData) {
+        console.error('❌ No image data received in JSON body');
+        return res.status(400).json({ error: 'No image data provided in request body' });
+      }
+      
+      console.log(`📊 Image data type: ${typeof jsonData}`);
+      console.log(`📏 Image data length: ${jsonData.length} characters`);
+      console.log(`🔍 Image data starts with: ${jsonData.substring(0, 50)}...`);
+      
+      imageData = jsonData;
+    } 
+    // Unsupported content type
+    else {
+      console.error(`❌ Unsupported content type: ${contentType}`);
+      return res.status(400).json({ 
+        error: 'Unsupported content type', 
+        message: 'Supported formats are multipart/form-data or application/json'
+      });
     }
     
-    console.log(`📊 Image data type: ${typeof imageData}`);
-    console.log(`📏 Image data length: ${imageData.length} characters`);
-    console.log(`🔍 Image data starts with: ${imageData.substring(0, 50)}...`);
+    // Final check to ensure we have image data
+    if (!imageData) {
+      console.error('❌ No valid image data extracted from request');
+      return res.status(400).json({ error: 'No valid image data could be extracted from request' });
+    }
     
     // Ensure proper format for OpenAI's Vision API
     let processedImageData = imageData;
     
     // If it's a data URL, extract just the base64 part for debug logging
-    if (imageData.startsWith('data:image')) {
-      console.log(`🖼️ Image format: data URL (${imageData.split(';')[0]})`);
+    if (processedImageData.startsWith('data:image')) {
+      console.log(`🖼️ Image format: data URL (${processedImageData.split(';')[0]})`); 
       // No need to modify - OpenAI accepts this format
     } else {
       // If it's just base64 without the data URL prefix, add it
       console.log('🖼️ Image format: appears to be raw base64 - adding data URL prefix');
-      processedImageData = `data:image/jpeg;base64,${imageData}`;
+      processedImageData = `data:image/jpeg;base64,${processedImageData}`;
     }
     
     console.log('🚀 Sending request to OpenAI Vision API...');
