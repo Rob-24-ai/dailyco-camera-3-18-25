@@ -2,7 +2,8 @@
 const CONFIG = {
   startWithRearCamera: true,
   mirrorFrontCamera: true,
-  initTimeout: 100,  // Reduced from 500ms for faster startup
+  initTimeout: 500,  // Default safe timeout
+  fastStartup: false, // Set to true for faster startup (100ms) on capable devices
   debug: true        // Enable console logging for development
 };
 
@@ -30,9 +31,28 @@ function updateStatus(message, type = 'info') {
 // Stop any active stream
 function stopCurrentStream() {
   if (currentStream) {
-    currentStream.getTracks().forEach(track => track.stop());
-    videoElement.srcObject = null;
+    // Enhanced track stopping - ensure all tracks are explicitly stopped
+    currentStream.getTracks().forEach(track => {
+      if (CONFIG.debug) console.log(`Stopping track: ${track.kind} [${track.id}]`);
+      track.stop();
+    });
+    
+    // Ensure video element is properly reset
+    if (videoElement.srcObject) {
+      videoElement.srcObject = null;
+    }
     currentStream = null;
+  }
+}
+
+// Helper function to ensure consistent mirroring state
+function updateMirroringState(isFrontCamera) {
+  // Clear any existing classes first
+  videoElement.classList.remove('mirrored');
+  
+  // Apply mirroring only for front camera when configured
+  if (isFrontCamera && CONFIG.mirrorFrontCamera) {
+    videoElement.classList.add('mirrored');
   }
 }
 
@@ -75,12 +95,8 @@ async function startCamera(useRear = true) {
     // Set the stream to video element
     videoElement.srcObject = currentStream;
     
-    // Apply mirroring for front camera only, leave rear camera as-is
-    if (!useRear && CONFIG.mirrorFrontCamera) {
-      videoElement.classList.add('mirrored');
-    } else {
-      videoElement.classList.remove('mirrored');
-    }
+    // Apply mirroring for front camera only with enhanced consistency
+    updateMirroringState(!useRear);
     
     // Show success message
     updateStatus(
@@ -119,7 +135,7 @@ if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
   // Add a small delay to ensure the DOM is fully loaded
   setTimeout(() => {
     startCamera(CONFIG.startWithRearCamera);
-  }, CONFIG.initTimeout);
+  }, CONFIG.fastStartup ? 100 : CONFIG.initTimeout);
 } else {
   updateStatus('Camera API not supported in this browser.', 'error');
 }
