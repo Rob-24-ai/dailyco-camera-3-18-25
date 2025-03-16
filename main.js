@@ -21,10 +21,18 @@ let currentStream = null;
 function updateStatus(message, type = 'info') {
   statusMessage.textContent = message;
   statusMessage.className = 'status';
+  
+  // Only show status element for errors (success and info are hidden)
   if (type === 'error') {
     statusMessage.classList.add('error');
-  } else if (type === 'success') {
-    statusMessage.classList.add('success');
+    statusMessage.style.display = 'block';
+  } else {
+    statusMessage.style.display = 'none';
+    
+    // Log non-error messages to console when in debug mode
+    if (CONFIG.debug) {
+      console.log(`Status (${type}): ${message}`);
+    }
   }
 }
 
@@ -66,9 +74,9 @@ async function startCamera(useRear = true) {
     'Accessing front camera...'
   );
   
-  // Hide buttons while we're connecting
+  // Hide retry button while we're connecting
   retryButton.style.display = 'none';
-  switchCameraButton.style.display = 'none';
+  // Switch button is always visible in the new UI
   
   try {
     // Try with preferred camera first
@@ -104,8 +112,7 @@ async function startCamera(useRear = true) {
       'success'
     );
     
-    // Show switch camera button for devices with multiple cameras
-    switchCameraButton.style.display = 'inline-block';
+    // Switch camera button is always visible in the new UI
   } catch (error) {
     console.error('Camera access error:', error);
     
@@ -116,8 +123,7 @@ async function startCamera(useRear = true) {
     );
     
     // Show retry button
-    retryButton.style.display = 'inline-block';
-    switchCameraButton.style.display = 'inline-block';
+    retryButton.style.display = 'block';
   }
 }
 
