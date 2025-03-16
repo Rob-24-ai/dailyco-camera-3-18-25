@@ -4,10 +4,12 @@ import { initAI } from './ai-integration.js';
 // Configuration object for easy future modifications
 const CONFIG = {
   startWithRearCamera: true,
-  mirrorFrontCamera: true,
+  mirrorFrontCamera: true,   // For selfie view (front camera)
+  mirrorRearCamera: false,   // Don't mirror rear camera by default
   initTimeout: 500,  // Default safe timeout
   fastStartup: false, // Set to true for faster startup (100ms) on capable devices
-  debug: true        // Enable console logging for development
+  debug: true,       // Enable console logging for development
+  desktopTesting: true // Enable desktop testing fallbacks for easier development
 };
 
 // Get DOM references
@@ -82,7 +84,7 @@ async function startCamera(useRear = true) {
   // Switch button is always visible in the new UI
   
   try {
-    // Try with preferred camera first
+    // Try with preferred camera first - with desktop testing fallbacks
     let constraints = {
       video: useRear ? 
         { facingMode: { exact: 'environment' } } : 
@@ -91,6 +93,7 @@ async function startCamera(useRear = true) {
     };
     
     try {
+      if (CONFIG.debug) console.log('Attempting camera access with exact constraints:', constraints);
       currentStream = await navigator.mediaDevices.getUserMedia(constraints);
     } catch (exactError) {
       if (CONFIG.debug) console.log('Exact mode failed, trying without exact:', exactError);
@@ -99,8 +102,23 @@ async function startCamera(useRear = true) {
       constraints.video = useRear ? 
         { facingMode: 'environment' } : 
         { facingMode: 'user' };
+      
+      try {
+        if (CONFIG.debug) console.log('Attempting camera access with relaxed constraints:', constraints);  
+        currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (relaxedError) {
+        if (CONFIG.debug) console.log('Relaxed constraints failed:', relaxedError);
         
-      currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+        if (CONFIG.desktopTesting) {
+          // Desktop testing fallback - just get any video device
+          if (CONFIG.debug) console.log('Trying desktop testing fallback - any camera');
+          constraints.video = true;
+          currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+        } else {
+          // Re-throw the error if desktop testing is disabled
+          throw relaxedError;
+        }
+      }
     }
     
     // Set the stream to video element

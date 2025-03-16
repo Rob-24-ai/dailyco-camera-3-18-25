@@ -1,16 +1,17 @@
-const express = require('express');
-const cors = require('cors');
-const axios = require('axios');
-require('dotenv').config();
+// Vercel Serverless Function for Vision API
+import axios from 'axios';
 
-const app = express();
-app.use(cors());
-app.use(express.json({limit: '5mb'}));  // Limiting payload size
+export default async function handler(req, res) {
+  // Only allow POST requests
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
-// Single vision endpoint to start
-app.post('/api/vision/analyze', async (req, res) => {
+  // Log request info
+  console.log('📥 Received vision analysis request');
+  
   try {
-    console.log('📥 Received vision analysis request');
+    // Get image data from request body
     const { imageData } = req.body;
     
     if (!imageData) {
@@ -23,9 +24,6 @@ app.post('/api/vision/analyze', async (req, res) => {
     console.log(`🔍 Image data starts with: ${imageData.substring(0, 50)}...`);
     
     // Ensure proper format for OpenAI's Vision API
-    // OpenAI requires either a publicly accessible URL or a base64-encoded image
-    // We need to ensure the format is correct regardless of how it was captured
-    
     let processedImageData = imageData;
     
     // If it's a data URL, extract just the base64 part for debug logging
@@ -42,7 +40,6 @@ app.post('/api/vision/analyze', async (req, res) => {
     
     // Call OpenAI Vision API
     // OpenAI's Vision API is officially accessed through the chat completions endpoint
-    // Make sure we're using the correct endpoint and format
     const apiEndpoint = 'https://api.openai.com/v1/chat/completions';
     console.log(`Using endpoint: ${apiEndpoint}`);
     
@@ -65,24 +62,7 @@ app.post('/api/vision/analyze', async (req, res) => {
     
     const response = await axios.post(
       apiEndpoint,
-      {
-        model: "gpt-4o",  // Using the latest GPT-4o model which has vision capabilities
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "What's in this image? Describe what you see briefly." },
-              { 
-                type: "image_url", 
-                image_url: { 
-                  url: processedImageData 
-                } 
-              }
-            ]
-          }
-        ],
-        max_tokens: 300
-      },
+      requestPayload,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -103,19 +83,22 @@ app.post('/api/vision/analyze', async (req, res) => {
     
     console.log('✅ Received response from OpenAI');
     
-    res.json({ 
-      text: response.data.choices[0].message.content,
-      provider: 'openai'
+    // Return the analysis result to the client
+    return res.status(200).json({ 
+      result: response.data.choices[0].message.content
     });
     
   } catch (error) {
     console.error('API Error:', error.message);
-    res.status(500).json({ 
-      error: 'Failed to analyze image',
-      message: error.message
+    
+    // Check for specific error types
+    if (error.response) {
+      console.error(`Status: ${error.response.status}`);
+      console.error('Error details:', error.response.data);
+    }
+    
+    return res.status(500).json({ 
+      error: `Failed to analyze image: ${error.message}` 
     });
   }
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}

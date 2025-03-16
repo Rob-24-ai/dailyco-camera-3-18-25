@@ -6,7 +6,8 @@
 // Configuration for AI services
 const AI_CONFIG = {
   vision: {
-    endpoint: 'http://localhost:3000/api/vision/analyze',
+    // Updated for Vercel deployment - use relative path for API endpoint
+    endpoint: '/api/vision',
     imageQuality: 0.8,
     maxWidth: 800,  // Resize large images to this width to reduce payload size
   }
@@ -55,6 +56,14 @@ function captureFrame(videoElement) {
  */
 async function analyzeImage(imageData) {
   try {
+    console.log('🔍 Analyzing image - length:', imageData.length);
+    console.log('🔗 Sending to endpoint:', AI_CONFIG.vision.endpoint);
+    
+    // Check if imageData is a valid data URL or base64 string
+    if (!imageData.startsWith('data:image')) {
+      console.warn('⚠️ Image data does not start with data:image - might need format adjustment');
+    }
+    
     const response = await fetch(AI_CONFIG.vision.endpoint, {
       method: 'POST',
       headers: {
@@ -63,13 +72,20 @@ async function analyzeImage(imageData) {
       body: JSON.stringify({ imageData })
     });
     
+    console.log('📥 Response status:', response.status);
+    
     if (!response.ok) {
+      console.error('❌ Server response not OK:', response.status, response.statusText);
+      const errorText = await response.text();
+      console.error('📄 Error details:', errorText);
       throw new Error(`Server returned ${response.status}: ${response.statusText}`);
     }
     
-    return await response.json();
+    const jsonResponse = await response.json();
+    console.log('✅ Response received:', jsonResponse);
+    return jsonResponse;
   } catch (error) {
-    console.error('Error analyzing image:', error);
+    console.error('❌ Error analyzing image:', error);
     throw error;
   }
 }
@@ -85,31 +101,55 @@ export function initAI(videoElement) {
   
   // Add click handler for analysis button
   analyzeBtn.addEventListener('click', async () => {
+    console.group('📷 AI Analysis Request');
     try {
       // Update UI to show loading state
       analyzeBtn.disabled = true;
       aiResponse.textContent = 'Analyzing image...';
       
+      console.log('📷 Capturing frame from video...');
       // Capture current frame from video
       const imageData = captureFrame(videoElement);
       
       if (!imageData) {
+        console.error('❌ Failed to capture image from camera');
         aiResponse.textContent = 'Error: Unable to capture image from camera.';
         analyzeBtn.disabled = false;
         return;
       }
       
+      console.log('✅ Frame captured successfully');
+      
+      // Create a debug indicator to show the captured image
+      const debugImg = document.createElement('img');
+      debugImg.src = imageData;
+      debugImg.style.width = '150px';
+      debugImg.style.display = 'block';
+      debugImg.style.marginTop = '10px';
+      
+      // Replace any previous debug image
+      const existingDebug = document.getElementById('debug-img');
+      if (existingDebug) existingDebug.remove();
+      
+      debugImg.id = 'debug-img';
+      aiResponse.after(debugImg);
+      
       // Send to AI for analysis
+      console.log('📣 Sending to AI for analysis...');
       const result = await analyzeImage(imageData);
       
+      console.log('✅ Analysis complete:', result);
+      
       // Display results
-      aiResponse.textContent = result.text;
+      aiResponse.textContent = result.text || 'No analysis text returned from the server.';
     } catch (error) {
       // Handle errors
+      console.error('❌ Analysis error:', error);
       aiResponse.textContent = `Error: ${error.message}`;
     } finally {
       // Re-enable button
       analyzeBtn.disabled = false;
+      console.groupEnd();
     }
   });
   
