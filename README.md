@@ -252,4 +252,5 @@ This application has been specifically tested and optimized for iPhone devices:
 
 ## License
 
-MIT
+ROB
+
