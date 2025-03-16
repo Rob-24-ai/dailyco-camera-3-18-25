@@ -1,3 +1,11 @@
+// Configuration object for easy future modifications
+const CONFIG = {
+  startWithRearCamera: true,
+  mirrorFrontCamera: true,
+  initTimeout: 100,  // Reduced from 500ms for faster startup
+  debug: true        // Enable console logging for development
+};
+
 // Get DOM references
 const videoElement = document.getElementById('cameraPreview');
 const statusMessage = document.getElementById('statusMessage');
@@ -5,7 +13,7 @@ const retryButton = document.getElementById('retryButton');
 const switchCameraButton = document.getElementById('switchCameraButton');
 
 // Track which camera we're using
-let usingRearCamera = true;
+let usingRearCamera = CONFIG.startWithRearCamera;
 let currentStream = null;
 
 // Update status with visual feedback
@@ -54,7 +62,7 @@ async function startCamera(useRear = true) {
     try {
       currentStream = await navigator.mediaDevices.getUserMedia(constraints);
     } catch (exactError) {
-      console.log('Exact mode failed, trying without exact:', exactError);
+      if (CONFIG.debug) console.log('Exact mode failed, trying without exact:', exactError);
       
       // If 'exact' fails, try without 'exact' constraint
       constraints.video = useRear ? 
@@ -68,7 +76,7 @@ async function startCamera(useRear = true) {
     videoElement.srcObject = currentStream;
     
     // Apply mirroring for front camera only, leave rear camera as-is
-    if (!useRear) {
+    if (!useRear && CONFIG.mirrorFrontCamera) {
       videoElement.classList.add('mirrored');
     } else {
       videoElement.classList.remove('mirrored');
@@ -110,8 +118,8 @@ switchCameraButton.addEventListener('click', () => {
 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
   // Add a small delay to ensure the DOM is fully loaded
   setTimeout(() => {
-    startCamera(true); // Start with rear camera
-  }, 500);
+    startCamera(CONFIG.startWithRearCamera);
+  }, CONFIG.initTimeout);
 } else {
   updateStatus('Camera API not supported in this browser.', 'error');
 }
