@@ -1,6 +1,6 @@
-# Mobile Rear Camera Web App with AI Integration
+# Mobile Camera Web App
 
-A web application that enables access to a mobile device's rear and front cameras with multimodal AI capabilities, featuring real-time voice interaction and image analysis.
+A clean, lightweight web application that enables access to a mobile device's rear and front cameras with picture-in-picture functionality.
 
 ## Overview
 
@@ -9,7 +9,7 @@ This application:
 2. Displays a live video feed from both **rear (environment-facing)** and **front (user-facing)** cameras of a mobile device
 3. Provides comprehensive error handling for situations like permission denial or unsupported browsers
 4. Includes UI enhancements with status messages and camera control buttons
-5. Supports AI-powered multimodal interaction with camera feed analysis and voice conversation
+5. Features picture-in-picture functionality to capture and display images
 6. Applies proper mirroring for front-facing camera for natural user experience
 
 ## Technical Requirements
