@@ -1,6 +1,11 @@
 /**
  * Camera Capture Module
  * Handles capturing frames from the camera and picture-in-picture functionality
+ * 
+ * KNOWN ISSUES:
+ * - Front camera (selfie view) does not properly mirror in the captured/frozen picture,
+ *   even though mirroring works correctly in the live feed. We're focusing on the
+ *   rear camera functionality for now and not addressing this issue.
  */
 
 // Configuration for image capture

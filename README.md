@@ -1,24 +1,24 @@
 # Mobile Camera Web App
 
-A clean, lightweight web application that enables access to a mobile device's rear and front cameras with picture-in-picture functionality.
+A clean, lightweight web application that enables access to a mobile device's cameras with picture-in-picture functionality, focusing primarily on the rear camera implementation.
 
 ## Overview
 
 This application:
 1. Runs under HTTPS (required by all modern mobile browsers for camera access)
-2. Displays a live video feed from both **rear (environment-facing)** and **front (user-facing)** cameras of a mobile device
+2. Primarily designed for the **rear (environment-facing)** camera with fallback to front camera
 3. Provides comprehensive error handling for situations like permission denial or unsupported browsers
 4. Includes UI enhancements with status messages and camera control buttons
-5. Features picture-in-picture functionality to capture and display images
-6. Applies proper mirroring for front-facing camera for natural user experience
+5. Features picture-in-picture functionality to capture and display images while showing a live thumbnail
+6. Defaults to rear camera for optimal functionality
+
+**Note:** The front camera (selfie view) has known issues with mirroring in captured images and is not the primary focus of this implementation.
 
 ## Technical Requirements
 
 1. **Modern Web Browser**: Safari (iOS), Chrome (Android), or other modern mobile browsers
 2. **HTTPS**: Camera access requires a secure context (HTTPS)
-3. **Device Permissions**: Camera access and microphone permissions must be granted
-4. **API Keys**: API keys for AI services (securely managed through backend)
-5. **Backend Server**: Simple Express server for secure API communication
+3. **Device Permissions**: Camera access permissions must be granted by the user
 
 ## Development Journey & Challenges
 

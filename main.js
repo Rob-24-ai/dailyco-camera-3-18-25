@@ -2,14 +2,16 @@
 import { initCameraCapture } from './camera-capture.js';
 
 // Configuration object for easy future modifications
+// NOTE: We're currently focusing on rear camera functionality. The front camera (selfie view)
+// has known issues with mirroring in captured images and is not prioritized for this implementation.
 const CONFIG = {
-  startWithRearCamera: true,
-  mirrorFrontCamera: true,   // For selfie view (front camera)
-  mirrorRearCamera: false,   // Don't mirror rear camera by default
-  initTimeout: 500,  // Default safe timeout
-  fastStartup: false, // Set to true for faster startup (100ms) on capable devices
-  debug: true,       // Enable console logging for development
-  desktopTesting: true // Enable desktop testing fallbacks for easier development
+  startWithRearCamera: true,  // IMPORTANT: Always start with rear camera by default
+  mirrorFrontCamera: true,    // For selfie view (front camera) - has issues with captured images
+  mirrorRearCamera: false,    // Don't mirror rear camera by default
+  initTimeout: 500,           // Default safe timeout
+  fastStartup: false,         // Set to true for faster startup (100ms) on capable devices
+  debug: true,                // Enable console logging for development
+  desktopTesting: true        // Enable desktop testing fallbacks for easier development
 };
 
 // Get DOM references
