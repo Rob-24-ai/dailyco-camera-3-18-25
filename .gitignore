@@ -8,17 +8,35 @@
 node_modules/
 .npm
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # Build files
 dist/
 build/
 
 # Server
-server/node_modules/
+server/
 
 # IDE and editor files
 .idea/
 .vscode/
+
+# macOS specific files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+Icon?
+
+# Thumbnails
+._*
+
+# Implementation notes and documentation
+IMPLEMENTATION_NOTES/
+
+# Examples directory
+examples/
 *.swp
 *.swo
 
