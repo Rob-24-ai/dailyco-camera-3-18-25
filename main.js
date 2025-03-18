@@ -1,5 +1,5 @@
-// Import AI integration module
-import { initAI } from './ai-integration.js';
+// Import camera capture module
+import { initCameraCapture } from './camera-capture.js';
 
 // Configuration object for easy future modifications
 const CONFIG = {
@@ -133,8 +133,8 @@ async function startCamera(useRear = true) {
       'success'
     );
     
-    // Initialize AI integration when camera is ready
-    initAI(videoElement);
+    // Initialize camera capture functionality when camera is ready
+    initCameraCapture(videoElement);
     
     // Switch camera button is always visible in the new UI
   } catch (error) {
